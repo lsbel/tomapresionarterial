@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Registro de tomas de presión arterial (embarazo)</title>
+  <style>
+    :root{
+      --bg: #f6f8fc;
+      --card: #ffffff;
+      --text: #1f2d3d;
+      --muted: #6b7280;
+      --primary: #2563eb;
+      --accent: #10b981;
+      --surface: rgba(0,0,0,.04);
+      --shadow: 0 6px 20px rgba(0,0,0,.08);
+      --radius: 14px;
+    }
+    * { box-sizing: border-box; }
+    *::before, *::after { box-sizing: border-box; }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #0f1220;
+        --card: #181a2a;
+        --text: #e5e7eb;
+        --muted: #a5a6a8;
+        --surface: rgba(255,255,255,.08);
+      }
+    }
+
+    html, body { height: 100%; }
+
+    body {
+      margin: 0;
+      font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+      background: linear-gradient(135deg, #f0f4ff 0%, #e9f7f2 60%, #fef4f4 100%);
+      color: var(--text);
+      display: flex;
+      flex-direction: column;
+    }
+
+    header.header {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      padding: 14px 20px;
+      background: linear-gradient(90deg, #4f46e5 0%, #06b6d4 60%, #10b981 100%);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      box-shadow: 0 4px 14px rgba(0,0,0,.15);
+    }
+    header .brand { display: flex; align-items: center; gap: 12px; }
+    header .brand .logo {
+      width: 34px; height: 34px; display: grid; place-items: center;
+      border-radius: 9px; background: rgba(255,255,255,.2);
+      font-size: 18px;
+    }
+    header h1 { font-size: 1.05rem; margin: 0; font-weight: 700; }
+    header .actions { display: flex; align-items: center; gap: 8px; }
+
+    main {
+      max-width: 1100px;
+      width: 92%;
+      margin: 20px auto;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+    }
+
+    @media (max-width: 900px) {
+      main { grid-template-columns: 1fr; width: 95%; }
+    }
+
+    .card {
+      background: var(--card);
+      border-radius: var(--radius);
+      padding: 18px;
+      box-shadow: var(--shadow);
+      border: 1px solid rgba(0,0,0,.05);
+    }
+
+    h2 { margin: 0 0 12px; font-size: 1.05rem; }
+
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    label { display: block; font-size: .85rem; color: var(--muted); margin-bottom: 6px; }
+    input, select {
+      width: 100%; padding: 10px 12px; border: 1px solid #d1d5db;
+      border-radius: 8px; background: #fff; font-size: 1rem;
+    }
+    input[type="date"] { padding: 9px 12px; }
+
+    .row { display: flex; gap: 8px; align-items: center; }
+
+    .btn {
+      padding: 10px 14px; border-radius: 8px; border: 1px solid #d1d5db;
+      background: #fff; cursor: pointer; font-weight: 600; transition: transform .05s ease;
+    }
+    .btn.primary { background: var(--primary); color: #fff; border: none; }
+    .btn.ghost { background: #f8fafc; }
+    .btn.danger { background: #fff; color: #e11d48; border: 1px solid #e11d48; }
+    .btn:active { transform: scale(0.99); }
+
+    .status { margin-top: 8px; min-height: 1.2em; color: var(--muted); }
+
+    .summary { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+    @media (max-width: 800px) { .summary { grid-template-columns: repeat(2, 1fr); } }
+
+    .stat {
+      padding: 12px; border-radius: 10px;
+      background: linear-gradient(135deg, rgba(37,99,235,.15), rgba(16,185,129,.15));
+      border: 1px solid rgba(37,99,235,.25);
+      min-height: 90px;
+    }
+    .stat .label { font-size: .8rem; color: var(--muted); }
+    .stat .value { font-size: 1.15rem; font-weight: 700; margin-top: 6px; }
+
+    .tableWrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 10px; border-bottom: 1px solid #e5e7eb; text-align: left; white-space: nowrap; }
+    thead th { position: sticky; top: 0; background: #fff; z-index: 1; }
+    .tag { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: .75rem; }
+    .tag.dia { background: #e0f2fe; color: #0369a1; }
+    .tag.noche { background: #f3e8ff; color: #6b21a8; }
+
+    .empty { text-align: center; padding: 18px; color: var(--muted); }
+    .filters { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 8px; }
+    .filters input { width: 150px; }
+    .footerNote { text-align: center; color: var(--muted); font-size: .85rem; margin-top: 8px; }
+  </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+</head>
+<body>
+  <header class="header" aria-label="Encabezado de la app">
+    <div class="brand" style="display:flex;gap:12px;align-items:center;">
+      <div class="logo" aria-label="icono">🩺</div>
+      <div>
+        <strong style="display:block;">Registro de tomas de presión arterial</strong>
+        <span style="font-size:.85rem;color:#e2e8f0;">Embarazo - dos tomas diarias</span>
+      </div>
+    </div>
+    <div class="actions" aria-label="Acciones de cabecera">
+      <button id="toggleTheme" class="btn ghost" title="Cambiar tema">Tema</button>
+    </div>
+  </header>
+
+  <main>
+    <section class="card" aria-label="Nuevo registro">
+      <h2>Nueva lectura</h2>
+      <div class="grid" id="formGrid">
+        <div>
+          <label for="dateInput">Fecha (YYYY-MM-DD)</label>
+          <input type="date" id="dateInput" />
+        </div>
+        <div>
+          <label for="slotSelect">Turno</label>
+          <select id="slotSelect" aria-label="Turno (dia o noche)">
+            <option value="">- seleccionar -</option>
+            <option value="dia">Día (mañana)</option>
+            <option value="noche">Noche</option>
+          </select>
+        </div>
+        <div>
+          <label for="sysInput">SYS (mmHg)</label>
+          <input type="number" id="sysInput" placeholder="p. ej., 120" />
+        </div>
+        <div>
+          <label for="diaInput">DIA (mmHg)</label>
+          <input type="number" id="diaInput" placeholder="p. ej., 80" />
+        </div>
+      </div>
+
+      <div class="row" style="margin-top:12px; flex-wrap: wrap; gap:8px;">
+        <button class="btn primary" id="saveBtn" type="button" aria-label="Guardar lectura">Guardar lectura</button>
+        <button class="btn ghost" id="clearBtn" type="button" aria-label="Reiniciar campos">Reiniciar campos</button>
+        <button class="btn ghost" id="exportBtn" type="button" aria-label="Exportar CSV">Exportar CSV</button>
+        <button class="btn ghost" id="exportPDFBtn" type="button" aria-label="Exportar PDF">Exportar PDF</button>
+        <span class="status" id="status" aria-live="polite"></span>
+      </div>
+    </section>
+
+    <section class="card" aria-label="Resumen de lecturas" style="display:flex;flex-direction:column;gap:12px;">
+      <h2>Resumen rápido</h2>
+      <div class="summary" id="summary">
+        <div class="stat" aria-label="Total lecturas">
+          <div class="label">Lecturas totales</div>
+          <div class="value" id="totalsCount">0</div>
+        </div>
+        <div class="stat" aria-label="Promedio SYS">
+          <div class="label">Promedio SYS (mmHg)</div>
+          <div class="value" id="averageSYS">0</div>
+        </div>
+        <div class="stat" aria-label="Promedio DIA">
+          <div class="label">Promedio DIA (mmHg)</div>
+          <div class="value" id="averageDIA">0</div>
+        </div>
+        <div class="stat" aria-label="Rangos SYS">
+          <div class="label">SYS mínimo / máximo</div>
+          <div class="value" id="minMaxSYS">- / -</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card" aria-label="Lecturas registradas" style="display:flex;flex-direction:column;gap:12px;">
+      <h2>Lecturas registradas</h2>
+      <div class="filters" aria-label="Filtrar por fecha">
+        <label for="fromDate" style="font-weight:600;">Desde</label>
+        <input type="date" id="fromDate" />
+        <label for="toDate" style="font-weight:600;">Hasta</label>
+        <input type="date" id="toDate" />
+        <button class="btn ghost" id="clearFilter" type="button" title="Limpiar filtros">Limpiar filtros</button>
+        <span class="status" id="filterStatus" style="margin-left:auto;"></span>
+      </div>
+      <div class="tableWrap" id="tableContainer"></div>
+      <div class="footerNote">Ahora los datos se leen y escriben en GitHub mediante un backend seguro.</div>
+    </section>
+  </main>
+
+  <script>
+    const API_BASE = "https://TU_BACKEND_AQUI.onrender.com";
+    const THEME_KEY = 'bp_theme';
+
+    function todayISO() {
+      const d = new Date();
+      const yyyy = d.getFullYear();
+      const mm = String(d.getMonth() + 1).padStart(2, '0');
+      const dd = String(d.getDate()).padStart(2, '0');
+      return `${yyyy}-${mm}-${dd}`;
+    }
+
+    function formatDateLabel(dateStr) {
+      if (!dateStr) return '';
+      const [y,m,d] = dateStr.split('-');
+      return `${d}/${m}/${y}`;
+    }
+
+    const dateInput   = document.getElementById('dateInput');
+    const slotSelect  = document.getElementById('slotSelect');
+    const sysInput    = document.getElementById('sysInput');
+    const diaInput    = document.getElementById('diaInput');
+    const saveBtn     = document.getElementById('saveBtn');
+    const clearBtn    = document.getElementById('clearBtn');
+    const exportBtn   = document.getElementById('exportBtn');
+    const statusEl    = document.getElementById('status');
+    const tableContainer = document.getElementById('tableContainer');
+    const fromDate    = document.getElementById('fromDate');
+    const toDate      = document.getElementById('toDate');
+    const filterStatus = document.getElementById('filterStatus');
+    const totalsCount = document.getElementById('totalsCount');
+    const averageSYS  = document.getElementById('averageSYS');
+    const averageDIA  = document.getElementById('averageDIA');
+    const minMaxSYS   = document.getElementById('minMaxSYS');
+    const toggleThemeBtn = document.getElementById('toggleTheme');
+
+    function applyTheme(dark) {
+      document.documentElement.style.setProperty('--bg', dark ? '#0b1020' : '#f6f8fc');
+      document.documentElement.style.setProperty('--card', dark ? '#14172a' : '#ffffff');
+      document.documentElement.style.setProperty('--text', dark ? '#e5e7eb' : '#1f2d3d');
+      document.documentElement.style.setProperty('--muted', dark ? '#a5a6a8' : '#6b7280');
+      document.body.style.background = dark
+        ? 'linear-gradient(135deg, #0b1020 0%, #1b1b2a 60%, #0b0b0b 100%)'
+        : 'var(--bg)';
+    }
+
+    function loadTheme() {
+      const saved = localStorage.getItem(THEME_KEY);
+      const useDark = saved ? JSON.parse(saved) : false;
+      applyTheme(useDark);
+      return useDark;
+    }
+
+    let isDark = loadTheme();
+    toggleThemeBtn.addEventListener('click', () => {
+      isDark = !isDark;
+      applyTheme(isDark);
+      localStorage.setItem(THEME_KEY, JSON.stringify(isDark));
+    });
+
+    async function apiGetReadings() {
+      const res = await fetch(`${API_BASE}/lecturas`);
+      const data = await res.json();
+      if (!res.ok || !data.ok) throw new Error(data.error || 'No se pudieron cargar las lecturas');
+      return data.lecturas || [];
+    }
+
+    async function apiSaveReading(reading) {
+      const res = await fetch(`${API_BASE}/guardar`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(reading)
+      });
+      const data = await res.json();
+      if (!res.ok || !data.ok) throw new Error(data.error || 'No se pudo guardar');
+      return data.lectura;
+    }
+
+    async function apiDeleteReading(id) {
+      const res = await fetch(`${API_BASE}/lecturas/${id}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (!res.ok || !data.ok) throw new Error(data.error || 'No se pudo eliminar');
+      return true;
+    }
+
+    function determineSlot(dt = new Date()) {
+      const h = dt.getHours();
+      return (h >= 6 && h < 18) ? 'dia' : 'noche';
+    }
+
+    function createReadingObj({ date, time_slot, systolic, diastolic }) {
+      return {
+        id: Date.now(),
+        date,
+        time_slot,
+        systolic: Number(systolic),
+        diastolic: Number(diastolic),
+        created_at: new Date().toISOString()
+      };
+    }
+
+    async function renderTable(filterFrom, filterTo) {
+      const readings = await apiGetReadings();
+      const fFrom = filterFrom || null;
+      const fTo = filterTo || null;
+
+      const filtered = readings.filter(r => {
+        if (!fFrom && !fTo) return true;
+        if (fFrom && r.date < fFrom) return false;
+        if (fTo && r.date > fTo) return false;
+        return true;
+      });
+
+      filtered.sort((a,b) => {
+        if (a.date !== b.date) return a.date < b.date ? -1 : 1;
+        if (a.time_slot === b.time_slot) return 0;
+        return a.time_slot === 'dia' ? -1 : 1;
+      });
+
+      if (filtered.length === 0) {
+        tableContainer.innerHTML = '<div class="empty">No hay lecturas para el rango seleccionado.</div>';
+      } else {
+        const tbl = document.createElement('table');
+        tbl.innerHTML = `
+          <thead>
+            <tr>
+              <th>Fecha</th>
+              <th>Turno</th>
+              <th>SYS</th>
+              <th>DIA</th>
+              <th>Created At</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        `;
+        const tbody = tbl.querySelector('tbody');
+
+        filtered.forEach(r => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td>${formatDateLabel(r.date)}</td>
+            <td><span class="tag ${r.time_slot}">${r.time_slot}</span></td>
+            <td>${r.systolic}</td>
+            <td>${r.diastolic}</td>
+            <td>${new Date(r.created_at).toLocaleString()}</td>
+            <td><button class="btn ghost" data-id="${r.id}" aria-label="Eliminar lectura">Eliminar</button></td>
+          `;
+          tbody.appendChild(tr);
+        });
+
+        tbody.querySelectorAll('button[data-id]').forEach(btn => {
+          btn.addEventListener('click', async () => {
+            try {
+              const id = Number(btn.getAttribute('data-id'));
+              await apiDeleteReading(id);
+              await renderTable(filterFrom, filterTo);
+              statusEl.textContent = 'Lectura eliminada.';
+            } catch (error) {
+              statusEl.textContent = error.message;
+            }
+          });
+        });
+
+        tableContainer.innerHTML = '';
+        tableContainer.appendChild(tbl);
+      }
+
+      await updateSummary(readings);
+    }
+
+    async function updateSummary(existingReadings) {
+      const readings = existingReadings || await apiGetReadings();
+      const count = readings.length;
+      let sumSYS = 0, sumDIA = 0;
+      let minSYS = null, maxSYS = null;
+
+      readings.forEach(r => {
+        sumSYS += r.systolic;
+        sumDIA += r.diastolic;
+        if (minSYS === null || r.systolic < minSYS) minSYS = r.systolic;
+        if (maxSYS === null || r.systolic > maxSYS) maxSYS = r.systolic;
+      });
+
+      const avgSYS = count ? (sumSYS / count) : 0;
+      const avgDIA = count ? (sumDIA / count) : 0;
+
+      totalsCount.textContent = count;
+      averageSYS.textContent = count ? Math.round(avgSYS) : 0;
+      averageDIA.textContent = count ? Math.round(avgDIA) : 0;
+      minMaxSYS.textContent = (minSYS === null || maxSYS === null) ? '- / -' : `${minSYS} / ${maxSYS}`;
+    }
+
+    async function saveReading() {
+      const dateVal = dateInput.value;
+      const dateStr = dateVal || todayISO();
+      let slotVal = slotSelect.value;
+      if (!slotVal) slotVal = determineSlot(new Date());
+
+      const sysNum = Number(sysInput.value);
+      const diaNum = Number(diaInput.value);
+
+      if (!dateStr) {
+        statusEl.textContent = 'Ingresa una fecha válida.';
+        return;
+      }
+      if (!['dia','noche'].includes(slotVal)) {
+        statusEl.textContent = 'Selecciona un turno válido.';
+        return;
+      }
+      if (!Number.isFinite(sysNum) || !Number.isFinite(diaNum)) {
+        statusEl.textContent = 'Ingresa valores numéricos para SYS y DIA.';
+        return;
+      }
+
+      const newReading = createReadingObj({
+        date: dateStr,
+        time_slot: slotVal,
+        systolic: sysNum,
+        diastolic: diaNum
+      });
+
+      try {
+        await apiSaveReading(newReading);
+        await renderTable(fromDate.value, toDate.value);
+
+        let message = 'Lectura registrada correctamente.';
+        if (sysNum >= 135) {
+          message = '💌 Mi amor, te enseñé a relajarte un poco. ¿Recuerdas? Respira profundo, relájate, cuídate por nosotros. Nuestra bebe y yo te necesitamos bien y tranquila. Te amo infinito. 💕👶';
+        } else if (diaNum > 70) {
+          message = '❤️ Cariño, por favor relájate. Tu presión diastólica está un poco alta. Cuídate, te lo pido con amor. 🙏';
+        } else if (sysNum < 135 && diaNum <= 70) {
+          message = '✨ ¡Excelente! Tu presión está perfecta. Sigue así, vas muy bien. 💪 ¡Estamos muy orgullosos tu bebe y yo! 🎉';
+        }
+
+        statusEl.textContent = message;
+        clearForm();
+      } catch (error) {
+        statusEl.textContent = `Error al guardar: ${error.message}`;
+      }
+    }
+
+    function clearForm() {
+      sysInput.value = '';
+      diaInput.value = '';
+    }
+
+    async function exportCSV() {
+      const arr = await apiGetReadings();
+      if (arr.length === 0) {
+        statusEl.textContent = 'No hay lecturas para exportar.';
+        return;
+      }
+      const headers = ['id','date','time_slot','systolic','diastolic','created_at'];
+      const rows = arr.map(r => [r.id, r.date, r.time_slot, r.systolic, r.diastolic, r.created_at]);
+      const csvLines = [headers.join(','), ...rows.map(r => r.map(v => {
+        const s = String(v);
+        if (s.includes(',') || s.includes('"') || s.includes('\n')) {
+          return '"' + s.replace(/"/g, '""') + '"';
+        }
+        return s;
+      }).join(','))].join('\n');
+      const blob = new Blob([csvLines], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'lecturas_presion.csv';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      statusEl.textContent = 'Exportación CSV completada.';
+    }
+
+    async function exportPDF() {
+      const arr = await apiGetReadings();
+      if (arr.length === 0) {
+        statusEl.textContent = 'No hay lecturas para exportar.';
+        return;
+      }
+
+      let htmlContent = `
+        <div style="font-family: Arial, sans-serif; padding: 20px;">
+          <h1 style="text-align: center; color: #2563eb;">Registro de Presión Arterial</h1>
+          <p style="text-align: center; color: #6b7280; margin-bottom: 20px;">Embarazo - Dos tomas diarias</p>
+          <table style="width: 100%; border-collapse: collapse; margin-bottom: 30px;">
+            <thead>
+              <tr style="background-color: #f3f4f6; border-bottom: 2px solid #d1d5db;">
+                <th style="padding: 12px; text-align: left; border: 1px solid #e5e7eb;">Fecha</th>
+                <th style="padding: 12px; text-align: left; border: 1px solid #e5e7eb;">Turno</th>
+                <th style="padding: 12px; text-align: center; border: 1px solid #e5e7eb;">SYS (mmHg)</th>
+                <th style="padding: 12px; text-align: center; border: 1px solid #e5e7eb;">DIA (mmHg)</th>
+                <th style="padding: 12px; text-align: left; border: 1px solid #e5e7eb;">Registrado</th>
+              </tr>
+            </thead>
+            <tbody>
+      `;
+
+      arr.forEach(r => {
+        const turno = r.time_slot === 'dia' ? 'Día (mañana)' : 'Noche';
+        const fecha = formatDateLabel(r.date);
+        const fechaRegistro = new Date(r.created_at).toLocaleString('es-ES');
+        htmlContent += `
+          <tr style="border-bottom: 1px solid #e5e7eb;">
+            <td style="padding: 10px; border: 1px solid #e5e7eb;">${fecha}</td>
+            <td style="padding: 10px; border: 1px solid #e5e7eb;">${turno}</td>
+            <td style="padding: 10px; text-align: center; border: 1px solid #e5e7eb; font-weight: bold;">${r.systolic}</td>
+            <td style="padding: 10px; text-align: center; border: 1px solid #e5e7eb; font-weight: bold;">${r.diastolic}</td>
+            <td style="padding: 10px; border: 1px solid #e5e7eb; font-size: 0.9em;">${fechaRegistro}</td>
+          </tr>
+        `;
+      });
+
+      const count = arr.length;
+      let sumSYS = 0, sumDIA = 0;
+      let minSYS = null, maxSYS = null;
+      arr.forEach(r => {
+        sumSYS += r.systolic;
+        sumDIA += r.diastolic;
+        if (minSYS === null || r.systolic < minSYS) minSYS = r.systolic;
+        if (maxSYS === null || r.systolic > maxSYS) maxSYS = r.systolic;
+      });
+
+      const avgSYS = Math.round(sumSYS / count);
+      const avgDIA = Math.round(sumDIA / count);
+
+      htmlContent += `
+            </tbody>
+          </table>
+          <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 15px; margin-top: 30px;">
+            <div style="background-color: #f0f9ff; padding: 15px; border-radius: 8px; border: 1px solid #bfdbfe;">
+              <p style="margin: 0; color: #6b7280; font-size: 0.9em;">Lecturas totales</p>
+              <p style="margin: 10px 0 0 0; font-size: 1.5em; font-weight: bold; color: #2563eb;">${count}</p>
+            </div>
+            <div style="background-color: #f0f9ff; padding: 15px; border-radius: 8px; border: 1px solid #bfdbfe;">
+              <p style="margin: 0; color: #6b7280; font-size: 0.9em;">Promedio SYS</p>
+              <p style="margin: 10px 0 0 0; font-size: 1.5em; font-weight: bold; color: #2563eb;">${avgSYS}</p>
+            </div>
+            <div style="background-color: #f0f9ff; padding: 15px; border-radius: 8px; border: 1px solid #bfdbfe;">
+              <p style="margin: 0; color: #6b7280; font-size: 0.9em;">Promedio DIA</p>
+              <p style="margin: 10px 0 0 0; font-size: 1.5em; font-weight: bold; color: #2563eb;">${avgDIA}</p>
+            </div>
+            <div style="background-color: #f0f9ff; padding: 15px; border-radius: 8px; border: 1px solid #bfdbfe;">
+              <p style="margin: 0; color: #6b7280; font-size: 0.9em;">SYS min / máx</p>
+              <p style="margin: 10px 0 0 0; font-size: 1.5em; font-weight: bold; color: #2563eb;">${minSYS} / ${maxSYS}</p>
+            </div>
+          </div>
+          <p style="text-align: center; color: #9ca3af; font-size: 0.85em; margin-top: 30px;">
+            Generado el ${new Date().toLocaleString('es-ES')}
+          </p>
+        </div>
+      `;
+
+      const element = document.createElement('div');
+      element.innerHTML = htmlContent;
+      const options = {
+        margin: 10,
+        filename: 'registros_presion.pdf',
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2 },
+        jsPDF: { orientation: 'portrait', unit: 'mm', format: 'a4' }
+      };
+
+      html2pdf().set(options).from(element).save();
+      statusEl.textContent = 'Exportación PDF completada.';
+    }
+
+    async function applyFilters() {
+      const fFrom = fromDate.value;
+      const fTo = toDate.value;
+      if (fFrom && fTo && fFrom > fTo) {
+        filterStatus.textContent = 'La fecha "Desde" no puede ser mayor que "Hasta".';
+        return;
+      }
+      filterStatus.textContent = '';
+      await renderTable(fFrom || null, fTo || null);
+    }
+
+    async function initDefaults() {
+      if (!dateInput.value) dateInput.value = todayISO();
+      slotSelect.value = determineSlot(new Date());
+      await renderTable();
+    }
+
+    saveBtn.addEventListener('click', saveReading);
+    clearBtn.addEventListener('click', () => {
+      clearForm();
+      statusEl.textContent = 'Campos reiniciados.';
+    });
+    exportBtn.addEventListener('click', exportCSV);
+    document.getElementById('exportPDFBtn').addEventListener('click', exportPDF);
+    fromDate.addEventListener('change', applyFilters);
+    toDate.addEventListener('change', applyFilters);
+    document.getElementById('clearFilter').addEventListener('click', async () => {
+      fromDate.value = '';
+      toDate.value = '';
+      filterStatus.textContent = '';
+      await renderTable();
+    });
+
+    (async function init() {
+      try {
+        await initDefaults();
+      } catch (error) {
+        statusEl.textContent = `Error inicializando: ${error.message}`;
+      }
+    })();
+  </script>
+</body>
+</html>
