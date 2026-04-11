@@ -198,5 +198,13 @@
     "systolic": 127,
     "diastolic": 78,
     "created_at": "2026-04-10T13:37:19.555Z"
+  },
+  {
+    "id": 1775871124558,
+    "date": "2026-04-10",
+    "time_slot": "noche",
+    "systolic": 126,
+    "diastolic": 70,
+    "created_at": "2026-04-11T01:32:04.558Z"
   }
 ]
