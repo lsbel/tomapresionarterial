@@ -1,13 +1,5 @@
 [
   {
-    "id": 1775008960571,
-    "date": "2026-03-29",
-    "time_slot": "dia",
-    "systolic": 123,
-    "diastolic": 73,
-    "created_at": "2026-04-01T02:02:40.571Z"
-  },
-  {
     "id": 1775009023658,
     "date": "2026-03-29",
     "time_slot": "noche",
