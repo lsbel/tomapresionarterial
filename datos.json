@@ -38,5 +38,13 @@
     "systolic": 126,
     "diastolic": 82,
     "created_at": "2026-04-29T16:14:48.491Z"
+  },
+  {
+    "id": 1777516822694,
+    "date": "2026-04-29",
+    "time_slot": "noche",
+    "systolic": 123,
+    "diastolic": 76,
+    "created_at": "2026-04-30T02:40:22.694Z"
   }
 ]
